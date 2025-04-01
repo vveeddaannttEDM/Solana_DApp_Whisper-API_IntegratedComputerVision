@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Solana DApp",
+    "slug": "solana-dapp-faceauth",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": ["ios", "android", "web"],
+    "sdkVersion": "49.0.0"
+  }
+}
