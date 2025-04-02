@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Button, Alert } from 'react-native';
+import { Connection, PublicKey, clusterApiUrl } from '@solana/web3.js'; // Solana Web3.js
 import * as WebBrowser from 'expo-web-browser';
-import { encodeURL } from '@solana/pay';
 
 const WalletConnect = ({ navigation }) => {
     const [walletConnected, setWalletConnected] = useState(false);
@@ -9,18 +9,48 @@ const WalletConnect = ({ navigation }) => {
 
     const connectWallet = async () => {
         try {
-            const phantomDeepLink = 'https://phantom.app/ul/v1/connect';
-            await WebBrowser.openBrowserAsync(phantomDeepLink);
-            
-            // Simulated response (In real case, we need backend handling)
-            setWalletConnected(true);
-            setWalletAddress('YourSolanaWalletAddress');
-            
-            Alert.alert("Wallet Connected!", "You are now connected to Phantom.", [
-                { text: "OK", onPress: () => navigation.navigate('HomeScreen') }
-            ]);
+            // Check if Phantom is installed
+            const { solana } = window;
+            if (solana && solana.isPhantom) {
+                // Connect to Phantom Wallet
+                const response = await solana.connect();
+                const publicKey = response.publicKey.toString();
+
+                // Set the connected wallet address
+                setWalletConnected(true);
+                setWalletAddress(publicKey);
+
+                // Show success alert
+                Alert.alert('Wallet Connected!', `Connected to: ${publicKey}`, [
+                    { text: 'OK', onPress: () => navigation.navigate('HomeScreen') },
+                ]);
+
+                // You can now interact with the Solana blockchain
+                await getBalance(publicKey); // Get wallet balance
+
+            } else {
+                Alert.alert('Phantom Wallet not found', 'Please install Phantom Wallet extension.');
+            }
         } catch (error) {
-            Alert.alert("Connection Failed", "Could not connect to wallet.");
+            Alert.alert('Connection Failed', 'Could not connect to wallet.');
+        }
+    };
+
+    // Function to get balance of the wallet using Solana Web3.js
+    const getBalance = async (publicKey) => {
+        try {
+            const connection = new Connection(clusterApiUrl('devnet'), 'confirmed');
+            const walletPublicKey = new PublicKey(publicKey);
+
+            // Get the wallet balance
+            const balance = await connection.getBalance(walletPublicKey);
+            console.log(`Wallet balance: ${balance / 1e9} SOL`); // SOL is in lamports, divide by 1e9 to get SOL value
+
+            // Display balance in the UI
+            Alert.alert('Wallet Balance', `Your wallet balance is: ${balance / 1e9} SOL`);
+        } catch (error) {
+            console.error('Error fetching balance:', error);
+            Alert.alert('Error', 'Could not fetch wallet balance.');
         }
     };
 
